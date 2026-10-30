@@ -106,6 +106,7 @@
 
   function checkEnvironment() {
     const warn = [];
+    if (callError) warn.push(callError);
     if (!SP.canSpeak) warn.push("这个浏览器不支持语音朗读。请用 Chrome、Edge 或 Safari 打开。");
     else if (!SP.englishVoices().length) warn.push("没有找到英文语音。请在系统设置里安装英文语音包，或换 Chrome 浏览器。");
     if (SP.canSpeak && !SP.zh) warn.push("没有找到中文语音：中文提示会以字幕显示（不朗读）。");
@@ -117,6 +118,8 @@
   // ───────────── call ─────────────
 
   let engine = null;
+  let callInProgress = false;
+  let callError = "";
   let tick = null;
   let wakeLock = null;
   let current = null;
@@ -165,71 +168,94 @@
   }
 
   async function startCall() {
-    SP.unlock();
-    SP.cueEnabled = state.settings.cue;
-    SP.listenEnabled = state.settings.listen && SP.canListen;
-    SP.pickVoices(state.settings.voiceURI);
-    if (SP.listenEnabled && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-      } catch (e) {
-        SP.listenEnabled = false;
+    // Lock synchronously, before microphone/wake-lock permission promises yield.
+    if (callInProgress) return;
+    callInProgress = true;
+    $("startBtn").disabled = true;
+    try {
+      callError = "";
+      checkEnvironment();
+      SP.unlock();
+      SP.cueEnabled = state.settings.cue;
+      SP.listenEnabled = state.settings.listen && SP.canListen;
+      SP.pickVoices(state.settings.voiceURI);
+      if (SP.listenEnabled && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach((t) => t.stop());
+        } catch (e) {
+          SP.listenEnabled = false;
+        }
       }
-    }
-    try { wakeLock = navigator.wakeLock ? await navigator.wakeLock.request("screen") : null; } catch (e) { wakeLock = null; }
+      try { wakeLock = navigator.wakeLock ? await navigator.wakeLock.request("screen") : null; } catch (e) { wakeLock = null; }
 
-    session = build(viewDay);
-    $("tglText").checked = state.settings.showText;
-    $("tglMic").checked = SP.listenEnabled;
-    $("tglMic").disabled = !SP.canListen;
-    show("call");
+      session = build(viewDay);
+      $("tglText").checked = state.settings.showText;
+      $("tglMic").checked = SP.listenEnabled;
+      $("tglMic").disabled = !SP.canListen;
+      show("call");
 
-    const io = {
-      now: () => performance.now(),
-      say: (t, l, r) => SP.say(t, l, r || state.settings.rate),
-      listen: (ms, o) => SP.listen(ms, o),
-      sleep: (ms) => SP.sleep(ms),
-      cancel: () => SP.cancel(),
-      cue: () => SP.cue(),
-      show: (sh) => renderCue(sh),
-      onBlock: (i, b) => {
-        $("callBlock").textContent = `${b.zh} · ${b.title}`;
-        renderSegments(i);
-      },
-      onHeard: (t, score) => {
+      const io = {
+        now: () => performance.now(),
+        say: (t, l, r) => SP.say(t, l, r || state.settings.rate),
+        listen: (ms, o) => SP.listen(ms, o),
+        sleep: (ms) => SP.sleep(ms),
+        cancel: () => SP.cancel(),
+        cue: () => SP.cue(),
+        show: (sh) => renderCue(sh),
+        onBlock: (i, b) => {
+          $("callBlock").textContent = `${b.zh} · ${b.title}`;
+          renderSegments(i);
+        },
+        onHeard: (t, score) => {
+          const h = $("heard");
+          h.textContent = `我听到：${t}`;
+          h.className = "heard " + (score >= 0.75 ? "good" : score >= 0.5 ? "ok" : "low");
+        },
+      };
+      SP.onState = (st, ms) => setState(st, ms);
+      SP.onInterim = (t) => {
         const h = $("heard");
         h.textContent = `我听到：${t}`;
-        h.className = "heard " + (score >= 0.75 ? "good" : score >= 0.5 ? "ok" : "low");
-      },
-    };
-    SP.onState = (st, ms) => setState(st, ms);
-    SP.onInterim = (t) => {
-      const h = $("heard");
-      h.textContent = `我听到：${t}`;
-      h.className = "heard live";
-    };
-    SP.onMicError = () => {
-      $("tglMic").checked = false;
-      $("heard").textContent = "麦克风没有权限，已切换为固定节奏模式。";
-    };
+        h.className = "heard live";
+      };
+      SP.onMicError = () => {
+        $("tglMic").checked = false;
+        $("heard").textContent = "麦克风没有权限，已切换为固定节奏模式。";
+      };
 
-    engine = new E.Engine(session, io);
-    tick = setInterval(() => {
-      if (!engine) return;
-      $("callTime").textContent = mmss(engine.elapsed());
-    }, 250);
-    const stats = await engine.run();
-    endCall(stats);
+      engine = new E.Engine(session, io);
+      tick = setInterval(() => {
+        if (!engine) return;
+        $("callTime").textContent = mmss(engine.elapsed());
+      }, 250);
+      const stats = await engine.run();
+      endCall(stats);
+    } catch (e) {
+      if (engine) engine.stop();
+      show("home");
+      callError = "通话未能正常启动或继续，请重试。";
+      checkEnvironment();
+    } finally {
+      clearInterval(tick);
+      tick = null;
+      SP.cancel();
+      SP.onState = null;
+      SP.onInterim = null;
+      SP.onMicError = null;
+      if (wakeLock) wakeLock.release().catch(() => {});
+      wakeLock = null;
+      engine = null;
+      callInProgress = false;
+      $("startBtn").disabled = false;
+    }
   }
 
   function endCall(stats) {
-    clearInterval(tick);
-    SP.cancel();
-    SP.onState = null;
-    if (wakeLock) wakeLock.release().catch(() => {});
     const minutes = stats.elapsedMs / 60000;
-    const completed = stats.completed || minutes >= 18;
+    // Reaching the final block (stats.completed) can also mean skipping it.
+    // Only actual, unpaused practice time earns completion credit.
+    const completed = minutes >= 18;
     const p = state.progress;
     const dayNum = session.dayNum;
     p.minutes = Math.round((p.minutes + minutes) * 10) / 10;
@@ -246,7 +272,6 @@
     const weakNew = stats.weak.filter((w) => !p.weak.some((x) => x.en === w.en));
     p.weak = [...weakNew, ...p.weak].slice(0, 20);
     save();
-    engine = null;
 
     $("doneBadge").textContent = completed ? "✓" : "…";
     $("doneBadge").className = "done-badge" + (completed ? "" : " partial");

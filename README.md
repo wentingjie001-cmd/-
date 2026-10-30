@@ -65,12 +65,13 @@ js/engine.js          播放引擎：控制节奏、暂停/重复/跳过、根�
 js/speech.js          浏览器语音：朗读（英文 + 中文提示）、语音识别、“叮”提示音
 js/app.js             界面、进度、打卡、设置（数据保存在浏览器 localStorage）
 tools/simulate.js     测试：检查课程数据，并用虚拟时钟模拟每一天的 20 分钟
+tools/regressions.test.js  回归测试：重复启动、权限/音频失败重试、跳过与 18 分钟完成门槛
 ```
 
 ## 测试
 
 ```bash
-npm test                         # 检查课程数据 + 模拟第 1–40 天，确认每天都是 19.5–21 分钟
+npm test                       # 回归测试 + 检查课程数据 + 模拟第 1–40 天（19.5–21 分钟）
 node tools/simulate.js --day 1   # 打印第 1 天完整的逐句时间线
 node tools/simulate.js --asr     # 同时模拟“学习者说话”，覆盖表扬/重来等反馈分支
 ```

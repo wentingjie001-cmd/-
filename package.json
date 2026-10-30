@@ -4,7 +4,7 @@
   "description": "Audio-first, call-style daily English speaking coach: 20 minutes a day, no writing.",
   "private": true,
   "scripts": {
-    "test": "node tools/simulate.js && node tools/simulate.js --asr",
+    "test": "node --test tools/regressions.test.js && node tools/simulate.js && node tools/simulate.js --asr",
     "start": "python3 -m http.server 8000"
   },
   "license": "MIT"
