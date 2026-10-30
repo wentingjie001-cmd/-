@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>每日英语教练 · Daily English Coach</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ───────────── Home ───────────── -->
+  <main id="home" class="screen">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">EN</div>
+        <div>
+          <div class="brand-title">每日英语教练</div>
+          <div class="brand-sub">Daily English Coach · 每天 20 分钟，只用耳朵和嘴</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="streak" id="streak" title="连续打卡天数"></div>
+        <button class="icon-btn" id="openSettings" aria-label="设置">设置</button>
+      </div>
+    </header>
+
+    <section class="today card">
+      <div class="today-head">
+        <button class="nav-btn" id="prevDay" aria-label="前一天">‹</button>
+        <div class="today-title">
+          <div class="phase-pill" id="phasePill"></div>
+          <h1><span id="dayLabel"></span> <span id="dayTitle"></span></h1>
+          <div class="day-zh" id="dayZh"></div>
+          <div class="focus" id="dayFocus"></div>
+        </div>
+        <button class="nav-btn" id="nextDay" aria-label="后一天">›</button>
+      </div>
+
+      <div class="done-note" id="doneNote" hidden></div>
+
+      <ol class="plan" id="plan"></ol>
+
+      <button class="call-btn" id="startBtn">
+        <span class="call-icon" aria-hidden="true"></span>
+        <span>开始今天的 20 分钟通话</span>
+      </button>
+      <div class="start-hint" id="startHint">戴上耳机，找个可以大声说话的地方。听到“叮”就轮到你说。</div>
+      <div class="warn" id="envWarn" hidden></div>
+    </section>
+
+    <section class="card">
+      <h2>30 天路线图 <span class="muted">· 第 31 天起进入“流利循环”，每天自动重组复习</span></h2>
+      <div class="phases" id="phases"></div>
+      <div class="roadmap" id="roadmap"></div>
+    </section>
+
+    <section class="card howto">
+      <h2>怎么用</h2>
+      <ul>
+        <li><b>每天一次，20 分钟。</b>教练会自动控制节奏，你只要听、跟读、回答，不需要写任何东西。</li>
+        <li><b>“叮”= 轮到你。</b>大声说出来。开启“麦克风”后，教练能听到你说的话：说得好会表扬，没听清会让你再来一次。</li>
+        <li><b>每一天都会自动复习</b>前 1、2、4、7、14、30 天的内容，以及你之前没说好的句子（间隔重复）。</li>
+        <li>快捷键：<kbd>空格</kbd> 暂停/继续，<kbd>R</kbd> 再听一遍，<kbd>→</kbd> 跳过，<kbd>N</kbd> 下一部分。</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- ───────────── Call ───────────── -->
+  <section id="call" class="screen call" hidden>
+    <div class="call-top">
+      <div class="call-block" id="callBlock"></div>
+      <div class="call-timer"><span id="callTime">00:00</span> / 20:00</div>
+    </div>
+    <div class="segments" id="segments"></div>
+
+    <div class="stage">
+      <div class="avatar-wrap" id="avatarWrap">
+        <div class="ring ring-you" id="youRing"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" /></svg></div>
+        <div class="avatar" id="avatar">Coach</div>
+      </div>
+      <div class="state" id="stateLabel">准备中…</div>
+
+      <div class="cue-card" id="cueCard">
+        <div class="hint" id="cHint"></div>
+        <div class="main" id="cMain"></div>
+        <div class="ipa" id="cIpa"></div>
+        <div class="zh" id="cZh"></div>
+      </div>
+      <div class="heard" id="heard"></div>
+    </div>
+
+    <div class="controls">
+      <button class="ctl" id="btnRepeat" title="再听一遍 (R)"><span>↺</span>再听一遍</button>
+      <button class="ctl big" id="btnPause" title="暂停 (空格)"><span id="pauseIcon">❚❚</span><b id="pauseText">暂停</b></button>
+      <button class="ctl" id="btnSkip" title="跳过 (→)"><span>»</span>跳过</button>
+    </div>
+    <div class="controls small">
+      <label class="toggle"><input type="checkbox" id="tglText" /> 显示文字</label>
+      <label class="toggle"><input type="checkbox" id="tglMic" /> 麦克风</label>
+      <button class="link" id="btnNextBlock">下一部分 ›</button>
+      <button class="hangup" id="btnHangup" title="结束通话">结束</button>
+    </div>
+  </section>
+
+  <!-- ───────────── Done ───────────── -->
+  <section id="done" class="screen" hidden>
+    <div class="card done-card">
+      <div class="done-badge" id="doneBadge">✓</div>
+      <h1 id="doneTitle"></h1>
+      <p class="muted" id="doneSub"></p>
+      <div class="stats" id="doneStats"></div>
+      <div id="weakWrap" hidden>
+        <h3>明天会优先复习这些：</h3>
+        <ul class="weak" id="weakList"></ul>
+      </div>
+      <button class="call-btn" id="backHome">回到首页</button>
+    </div>
+  </section>
+
+  <!-- ───────────── Settings ───────────── -->
+  <dialog id="settings">
+    <form method="dialog" class="settings">
+      <h2>设置</h2>
+      <label>你的英文名（教练会用在例句里）
+        <input id="sName" maxlength="24" placeholder="Alex" />
+      </label>
+      <label>你住的城市（拼音/英文）
+        <input id="sCity" maxlength="24" placeholder="Shanghai" />
+      </label>
+      <label>教练语速 <output id="sRateOut"></output>
+        <input type="range" id="sRate" min="0.6" max="1.2" step="0.05" />
+      </label>
+      <label>留给我说话的时间 <output id="sPauseOut"></output>
+        <input type="range" id="sPause" min="0.8" max="2" step="0.1" />
+      </label>
+      <label>英文声音
+        <select id="sVoice"></select>
+      </label>
+      <div class="row">
+        <button type="button" id="sTest" class="secondary">试听</button>
+        <span class="muted" id="sZhVoice"></span>
+      </div>
+      <label class="check"><input type="checkbox" id="sListen" /> 用麦克风听我说话（Chrome / Edge / Safari）</label>
+      <label class="check"><input type="checkbox" id="sCue" /> 轮到我时播放“叮”</label>
+      <label class="check"><input type="checkbox" id="sText" /> 通话中显示文字（关掉 = 纯听力模式，音标练习除外）</label>
+      <div class="row end">
+        <button type="button" id="sReset" class="danger">重置进度</button>
+        <button value="close" class="primary">完成</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/curriculum.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

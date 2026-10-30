@@ -1,0 +1,9 @@
+{
+  "name": "每日英语教练 · Daily English Coach",
+  "short_name": "英语教练",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f5f0",
+  "theme_color": "#0f172a",
+  "lang": "zh-CN"
+}
