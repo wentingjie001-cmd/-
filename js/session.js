@@ -267,15 +267,15 @@
     const talkMs = Math.round(({ 1: 9000, 2: 10000, 3: 12000, 4: 14000, 5: 15000 }[ctx.phase.id]) * P);
 
     const H = {
-      repeat: "跟我说 · Repeat",
-      recall: "用英文说 · Say it in English",
-      read: "读出音标 · Read the IPA",
-      shadow: "一起说 · Speak with me",
-      alone: "你自己说 · Your turn",
-      answer: "用英文回答 · Answer",
-      quiz: "第 1 个还是第 2 个？· One or two?",
-      tip: "发音要点 · Tip",
-      build: "一点点加长 · Build up",
+      repeat: "跟我说",
+      recall: "用英文说出来",
+      read: "读出音标",
+      shadow: "和我一起说",
+      alone: "你自己说",
+      answer: "用英文回答",
+      quiz: "第 1 个还是第 2 个？",
+      tip: "发音要点",
+      build: "一点点加长",
     };
 
     const T = {
@@ -389,7 +389,7 @@
         ops.push({ t: "wait", kind: "free", ms: talkMs });
         const modelShow = { mode: "repeat", main: model, zh: `问：${q}`, hint: H.repeat };
         if (round === 0) {
-          ops.push(show({ ...modelShow, hint: COACH.model.zh + " " + COACH.model.en }));
+          ops.push(show({ ...modelShow, hint: COACH.model.zh }));
           const m = COACH.model[ctx.phase.coach];
           ops.push({ t: "say", text: m, lang: ctx.phase.coach, rate: ctx.phase.coach === "en" ? R.normal : 1, coach: true });
           for (const p of parts) ops.push(show({ ...modelShow, main: p, full: model }), say(p, "slow"), waitRepeat(p));

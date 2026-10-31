@@ -61,8 +61,7 @@
     $("phasePill").textContent = sess.phase.zh;
     $("phasePill").dataset.phase = sess.phase.id;
     $("dayLabel").textContent = `第 ${viewDay} 天`;
-    $("dayTitle").textContent = d.title;
-    $("dayZh").textContent = d.zh;
+    $("dayTitle").textContent = `· ${d.zh}`;
     $("dayFocus").textContent = `发音重点：${d.focus}`;
     $("prevDay").disabled = viewDay <= 1;
 
@@ -85,7 +84,7 @@
         <li>
           <div class="plan-min">${b.seconds >= 60 ? (b.seconds / 60).toFixed(b.seconds % 60 ? 1 : 0) + " 分钟" : b.seconds + " 秒"}</div>
           <div class="plan-body">
-            <div class="plan-name">${esc(b.zh)} <span class="muted">· ${esc(b.title)}</span></div>
+            <div class="plan-name">${esc(b.zh)}</div>
             <div class="plan-desc">${rich(b.desc)}</div>
           </div>
         </li>`)
@@ -137,9 +136,9 @@
     const textOn = state.settings.showText;
     const card = $("cueCard");
     card.dataset.mode = sh2.mode || "";
-    $("cHint").textContent = sh2.hint || (sh2.mode === "coach" ? "教练 · Coach" : "");
+    $("cHint").textContent = sh2.hint || (sh2.mode === "coach" ? "教练" : "");
     const hideText = !textOn && !sh2.ipaOnly && sh2.mode !== "coach";
-    $("cMain").innerHTML = hideText ? '<span class="listen-only">仔细听 · Listen</span>' : rich(sh2.main || "");
+    $("cMain").innerHTML = hideText ? '<span class="listen-only">仔细听</span>' : rich(sh2.main || "");
     $("cMain").classList.toggle("long", (sh2.main || "").length > 42);
     $("cIpa").textContent = !hideText && sh2.ipa ? (sh2.ipa.startsWith("/") || sh2.mode === "pair" || sh2.mode === "quiz" ? sh2.ipa : `/${sh2.ipa}/`) : "";
     $("cZh").textContent = textOn || sh2.mode === "recall" || sh2.mode === "tip" ? sh2.zh || "" : "";
@@ -150,7 +149,7 @@
   function setState(st, ms) {
     const wrap = $("avatarWrap");
     wrap.dataset.state = st;
-    const label = { coach: "教练在说 · Listen", you: "轮到你 · Your turn", idle: "", paused: "已暂停 · Paused" }[st] || "";
+    const label = { coach: "教练在说，请听", you: "轮到你说", idle: "", paused: "已暂停" }[st] || "";
     $("stateLabel").textContent = label;
     const circle = $("youRing").querySelector("circle");
     circle.style.animation = "none";
@@ -204,7 +203,7 @@
         cue: () => SP.cue(),
         show: (sh) => renderCue(sh),
         onBlock: (i, b) => {
-          $("callBlock").textContent = `${b.zh} · ${b.title}`;
+          $("callBlock").textContent = b.zh;
           renderSegments(i);
         },
         onHeard: (t, score) => {
