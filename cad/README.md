@@ -28,7 +28,7 @@ python3 build_benchmark.py --photos <官网照片目录>  # 对标款 Aarn PM40 
 | `drawing.py` | 消隐线投影（OpenCascade HLR）、专利线条图、局部外观实线/虚线、VTK 渲染、尺寸标注工具 |
 | `build.py` | 生成全部输出 |
 | `schematics.py` | 2D 原理示意图 |
-| `benchmark_aarn_pm40.py` | 对标款 Aarn PM40 的逆向近似模型（照片标定，±10–15 mm），仅供对标，见 docs/05 |
+| `benchmark_aarn_pm40.py` | 对标款 Aarn PM40 的逆向近似模型（照片逐行测量，剪影 IoU 侧面 0.82 / 背面 0.92），仅供对标，见 docs/05 |
 | `build_benchmark.py` | 生成对标模型的 STEP/STL、渲染、视图、照片对比图，输出到 `out/benchmark_aarn_pm40/` |
 
 ## 输出（`cad/out/`）
