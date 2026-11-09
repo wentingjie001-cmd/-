@@ -18,6 +18,7 @@ python3 build.py          # 3D 导出 + 渲染 + 外观视图 + 发明附图 + �
 python3 build.py --fast   # 低分辨率渲染
 python3 schematics.py     # 原理示意图（对标原理图、附图 6、附图 7）
 python3 build_benchmark.py --photos <官网照片目录>  # 对标款 Aarn PM40 逆向近似模型（不带 --photos 则跳过照片对比图）
+python3 build_aarn_detail.py                      # 对标款细节模型（含内部结构、五金件、剖切、爆炸图、BOM）
 ```
 
 ## 文件
@@ -30,6 +31,9 @@ python3 build_benchmark.py --photos <官网照片目录>  # 对标款 Aarn PM40 
 | `schematics.py` | 2D 原理示意图 |
 | `benchmark_aarn_pm40.py` | 对标款 Aarn PM40 的逆向近似模型（照片逐行测量，剪影 IoU 侧面 0.82 / 背面 0.92），仅供对标，见 docs/05 |
 | `build_benchmark.py` | 生成对标模型的 STEP/STL、渲染、视图、照片对比图，输出到 `out/benchmark_aarn_pm40/` |
+| `aarn_hardware.py` | 五金件库：插扣、梯扣、三档扣、胸带滑钩、弹簧绳扣、拉链、Lasso Loc、织带环、打枣 |
+| `aarn_pm40_detail.py` | 对标款细节模型：63 种零件，空壳布料件、分层肩带腰带、内部件，每件标注"实测 / 照片可见 / 推断" |
+| `build_aarn_detail.py` | 生成细节模型的总装 STEP、渲染、剖切图、爆炸图、五金图集和 BOM，输出到 `out/benchmark_aarn_pm40/detail/`（约 8 分钟） |
 
 ## 输出（`cad/out/`）
 

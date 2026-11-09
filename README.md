@@ -11,7 +11,7 @@
 | [docs/02 专利检索与规避](docs/02_patent_landscape.md) | Aarn 专利族及状态（无中国同族、核心专利已过期）、现有技术、风险清单 |
 | [docs/03 改版设计方案](docs/03_redesign_spec.md) | 我们的 5 个创新点、外观区别、BOM、原型/手办计划 |
 | [docs/04 申请策略与材料清单](docs/04_filing_strategy_and_checklist.md) | 需要交什么（不需要交手办和带尺寸的工程图）、1 发明 + 1 实用新型 + 3 外观的组合方案 |
-| [docs/05 对标款逆向重建](docs/05_reverse_engineering_pm40.md) | Aarn PM40 近似 3D 模型（照片标定，非原厂文件）、测量表、精度与使用边界 |
+| [docs/05 对标款逆向重建](docs/05_reverse_engineering_pm40.md) | Aarn PM40 近似 3D 模型（照片标定，非原厂文件）、细节模型（63 种零件，含内部结构、五金件、剖切图、爆炸图、BOM）、测量表、精度与使用边界 |
 | [patent/A 发明/实用新型](patent/A_invention_linkage_harness/) | 权利要求书（16 项）、说明书、摘要初稿 |
 | [patent/C、D、E 外观设计](patent/) | 整包、局部（背负系统）、联动座的简要说明 |
 | [cad/](cad/README.md) | 参数化 3D 模型、STEP/STL、专利附图、外观视图、A3 工程图（含 DXF） |
