@@ -3,3 +3,4 @@ __pycache__/
 # contain Aarn's copyrighted product photos; regenerate locally with --photos
 cad/out/benchmark_aarn_pm40/compare/photo_vs_model_*
 cad/out/benchmark_aarn_pm40/compare/photo_overlay_*
+cad/out/benchmark_aarn_pm40/detail/compare/
