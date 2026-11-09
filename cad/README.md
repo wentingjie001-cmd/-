@@ -17,6 +17,7 @@ cd cad
 python3 build.py          # 3D 导出 + 渲染 + 外观视图 + 发明附图 + 工程图（约 2 分钟）
 python3 build.py --fast   # 低分辨率渲染
 python3 schematics.py     # 原理示意图（对标原理图、附图 6、附图 7）
+python3 build_benchmark.py --photos <官网照片目录>  # 对标款 Aarn PM40 逆向近似模型（不带 --photos 则跳过照片对比图）
 ```
 
 ## 文件
@@ -27,6 +28,8 @@ python3 schematics.py     # 原理示意图（对标原理图、附图 6、附�
 | `drawing.py` | 消隐线投影（OpenCascade HLR）、专利线条图、局部外观实线/虚线、VTK 渲染、尺寸标注工具 |
 | `build.py` | 生成全部输出 |
 | `schematics.py` | 2D 原理示意图 |
+| `benchmark_aarn_pm40.py` | 对标款 Aarn PM40 的逆向近似模型（照片标定，±10–15 mm），仅供对标，见 docs/05 |
+| `build_benchmark.py` | 生成对标模型的 STEP/STL、渲染、视图、照片对比图，输出到 `out/benchmark_aarn_pm40/` |
 
 ## 输出（`cad/out/`）
 
@@ -41,6 +44,7 @@ python3 schematics.py     # 原理示意图（对标原理图、附图 6、附�
 | `invention/fig1–fig5` | 带附图标记的说明书附图 | 发明 / 实用新型 A、B |
 | `schematics/fig6, fig7` | 联动原理、锁止状态示意 | 发明 / 实用新型 A、B |
 | `schematics/benchmark_*` | 对标款背部原理示意 | 调研报告 |
+| `benchmark_aarn_pm40/` | 对标款近似模型：STEP、1:4 STL、渲染、七视图、照片与模型对比、与我们改版的对比 | 对标分析，不用于生产和专利申请 |
 | `drawings/` | BP40-HUB-001 联动座 A3 工程图（PDF/PNG/SVG/DXF）、BP40-FRM-001 Y 型背架 A3 工程图 | 打样、开模询价 |
 
 ## 建模假设
