@@ -292,6 +292,10 @@ def _at(c: np.ndarray, zs) -> list:
 # --------------------------------------------------------------------------- pattern set
 
 
+# Centre height of the linkage hub on the back panel (matches hub_z0 = 52 in backpack_model.py) and the
+# bottom seam of the frame-sheet sleeve, which has to clear the hub backing plate.
+HUB_Z = 74.0
+SLEEVE_Z0 = 120.0
 NOTCH_Z = (40, 200, 290, 330, 480, 560, 640)
 
 
@@ -329,15 +333,16 @@ def build():
             ],
             marks=[
                 ("卷口起始线", [(-hb[idx(640)], 640), (hb[idx(640)], 640)]),
-                ("背板套下缝线", [(-hb[idx(50)], 50), (hb[idx(50)], 50)]),
+                ("背板套下缝线", [(-hb[idx(SLEEVE_Z0)], SLEEVE_Z0), (hb[idx(SLEEVE_Z0)], SLEEVE_Z0)]),
                 ("背板套上口", [(-hb[idx(610)], 610), (hb[idx(610)], 610)]),
-                ("联动座加强片 E01", [(-95, 8), (95, 8), (95, 88), (-95, 88), (-95, 8)]),
+                ("联动座加强片 E01", [(-95, HUB_Z - 40), (95, HUB_Z - 40), (95, HUB_Z + 40), (-95, HUB_Z + 40), (-95, HUB_Z - 40)]),
                 ("背长调节梯带 W11", [(-13, 430), (13, 430), (13, 600), (-13, 600), (-13, 430)]),
             ],
             drills=[(f"背长档 {k + 1}", (0.0, 450.0 + 25.0 * k)) for k in range(5)]
             + [("上拉带锚点", (s * 105.0, 585.0)) for s in (-1, 1)]
             + [("背架上角袋 E03", (s * 112.0, 560.0)) for s in (-1, 1)]
             + [("下区张紧带锚点", (s * 118.0, 180.0)) for s in (-1, 1)]
+            + [("上区张紧带凸轮扣锚点", (s * 112.0, 255.0)) for s in (-1, 1)]
             + [("提手", (s * 35.0, 636.0)) for s in (-1, 1)]
             + [("水袋管出口", (75.0, 600.0))],
             note="面朝人体一侧为正面。联动座用 4 颗螺钉穿过 E01 加强片、后幅和 E04 内衬板固定。",
@@ -513,10 +518,10 @@ def build():
     )
 
     # ---- C01 frame sheet, C02 sleeve --------------------------------------
-    j0, j1 = idx(70), idx(590)
+    j0, j1 = idx(SLEEVE_Z0 + 10), idx(590)
     sheet = [(hb[i] - 14, zs[i]) for i in range(j0, j1 + 1)] + [(-(hb[i] - 14), zs[i]) for i in range(j1, j0 - 1, -1)]
     add(Piece("C01", "背板（防鼓包）", "FRAME SHEET", "M8", 1, _closed("outline", rounded(sheet, 25), 0.0, "净裁，边缘去毛刺"), note="插入背板套，可抽出。"))
-    k0, k1 = idx(50), idx(610)
+    k0, k1 = idx(SLEEVE_Z0), idx(610)
     sl = [(hb[i], zs[i]) for i in range(k0, k1 + 1)]
     add(
         Piece(
@@ -526,14 +531,14 @@ def build():
             "M10",
             1,
             [
-                Edge("bottom", [(-sl[0][0], sl[0][1]), sl[0]], SA, "缝在后幅 z = 50"),
+                Edge("bottom", [(-sl[0][0], sl[0][1]), sl[0]], SA, f"缝在后幅 z = {SLEEVE_Z0:.0f}"),
                 Edge("right", sl, SA, "夹入后侧缝"),
                 Edge("top", [sl[-1], (-sl[-1][0], sl[-1][1])], 20.0, "卷边 10 + 10，中间缝 25 mm 魔术贴"),
                 Edge("left", [(-x, z) for x, z in sl[::-1]], SA, "夹入后侧缝"),
             ],
         )
     )
-    seams.append(Seam("背板套侧边 ↔ 后幅侧边 z50–610", "C02.right", P["C02"].edge("right").length(), "A01.right 段", cr[k1] - cr[k0]))
+    seams.append(Seam(f"背板套侧边 ↔ 后幅侧边 z{SLEEVE_Z0:.0f}–610", "C02.right", P["C02"].edge("right").length(), "A01.right 段", cr[k1] - cr[k0]))
 
     # ---- C03 suspended mesh ------------------------------------------------
     zm = np.arange(250.0, 540.1, STEP)
@@ -672,7 +677,7 @@ def build():
     # ---- E reinforcements --------------------------------------------------
     add(Piece("E01", "联动座安装加强片", "HUB MOUNT PATCH", "M2", 1, _closed("outline", rrect(190, 80, 8), 0.0, "热切净裁"), grain=0.0, drills=[("联动座螺钉孔", (sx * 62.0, sy * 14.0)) for sx in (-1, 1) for sy in (-1, 1)]))
     add(Piece("E04", "联动座内衬板", "HUB BACKING PLATE", "M8", 1, _closed("outline", rrect(180, 70, 8), 0.0, "净裁"), grain=0.0, drills=[("联动座螺钉孔", (sx * 62.0, sy * 14.0)) for sx in (-1, 1) for sy in (-1, 1)], note="放在后幅内侧、背板套下方，与 E01 一起夹住后幅。孔位为占位，以联动座定稿图为准。"))
-    add(Piece("E02", "织带锚点加强片", "ANCHOR PATCH", "M11", 6, _closed("outline", rrect(60, 45, 5), 0.0, "净裁"), grain=0.0))
+    add(Piece("E02", "织带锚点加强片", "ANCHOR PATCH", "M11", 6, _closed("outline", rrect(60, 45, 5), 0.0, "净裁"), grain=0.0, note="上拉带锚点 ×2、上区张紧带锚点 ×2、下区张紧带锚点 ×2。"))
     add(Piece("E03", "背架上角袋", "FRAME CORNER POCKET", "M11", 2, _closed("outline", rrect(56, 72, 6), 0.0, "净裁，三边车缝"), note="套住 Y 型背架上横梁两端，杆端先套胶帽防异响。"))
 
     top_perimeter = 2 * (2 * hb[-1]) + 2 * dp[-1]
@@ -707,8 +712,8 @@ def webbing(P, info):
         ("W05", "腰带收紧带", "25 mm 尼龙织带", 650, 2, "前拉式：从中扣回折到腰带翼"),
         ("W06", "卷口加强带", "20 mm 硬挺尼龙织带", round(roll), 2, "夹在前、后幅卷口折边内"),
         ("W07", "卷口侧扣带", "20 mm 尼龙织带", 200, 2, "侧幅上部，接卷口插扣"),
-        ("W08", "侧压缩带", "15 mm 尼龙织带", 420, 2, "侧幅 z = 480 处"),
-        ("W09", "上区张紧带", "20 mm 尼龙织带", 260, 2, "悬浮网下角 → 凸轮扣"),
+        ("W08", "侧压缩带", "15 mm 尼龙织带", 420, 4, "每侧两条，侧幅 z = 330 和 480 处"),
+        ("W09", "上区张紧带", "20 mm 尼龙织带", 260, 2, "悬浮网下角 → 后幅上的凸轮扣（z = 255）"),
         ("W10", "下区张紧带", "20 mm 尼龙织带", 300, 2, "腰垫 → 后幅下锚点"),
         ("W11", "背长调节梯带", "25 mm 尼龙织带", 330, 1, "后幅中线，5 档，档距 25 mm"),
         ("W12", "提手", "20 mm 尼龙织带（中段包管）", 260, 1, "后幅顶部"),
@@ -724,8 +729,8 @@ HARDWARE = [
     ("H01", "卷口插扣 20 mm", "侧开插扣，YKK LB20R 或同级（Duraflex、Woojin）", 2, "卷口两端"),
     ("H02", "腰带中扣 25 mm 双调", "双调侧开插扣，YKK LB25RD 或同级", 1, "腰带，前拉式"),
     ("H03", "梯扣 20 mm", "YKK LK20GV 或同级", 4, "肩带下调节 ×2、下区张紧 ×2"),
-    ("H04", "梯扣 15 mm", "同系列 15 mm", 4, "上拉带 ×2、侧压缩 ×2"),
-    ("H05", "凸轮扣 20 mm", "YKK LA20CB 或同级", 2, "上区张紧带"),
+    ("H04", "梯扣 15 mm", "同系列 15 mm", 6, "上拉带 ×2、侧压缩 ×4"),
+    ("H05", "凸轮扣 20 mm", "YKK LA20CB 或同级", 2, "上区张紧带，缝在后幅 z = 255 的锚点上"),
     ("H06", "胸带滑轨扣 15 mm（带哨）", "滑轨式胸带扣一套", 1, "肩带滑轨"),
     ("H07", "G 钩 25 mm", "铝或不锈钢 G 钩", 1, "背长调节，挂入梯带"),
     ("H08", "日字扣 25 mm", "YKK LA25S 或同级", 2, "腰带收紧带回折"),
