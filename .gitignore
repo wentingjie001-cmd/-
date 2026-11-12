@@ -4,3 +4,7 @@ __pycache__/
 cad/out/benchmark_aarn_pm40/compare/photo_vs_model_*
 cad/out/benchmark_aarn_pm40/compare/photo_overlay_*
 cad/out/benchmark_aarn_pm40/detail/compare/
+
+node_modules/
+__pycache__/
+*.pyc
