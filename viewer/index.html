@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#eef1f4">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.png">
+<title>BP40-A1 随动背负 40 L · 3D 预览</title>
+<style>
+:root {
+  --ink: #17212b;
+  --muted: #5d6b79;
+  --line: #d9dfe5;
+  --card: rgba(255, 255, 255, 0.92);
+  --accent: #e8690f;
+  --accent-ink: #b24a00;
+  --chip: #eef1f4;
+  --radius: 14px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+body {
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans CJK SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: #e9edf1;
+  -webkit-user-select: none; user-select: none;
+}
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+#stage {
+  position: relative; flex: 1 1 auto; min-height: 0;
+  background: radial-gradient(120% 90% at 50% 38%, #fbfcfd 0%, #e9edf1 62%, #d8dee5 100%);
+}
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+
+header {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 3; pointer-events: none;
+  padding: calc(env(safe-area-inset-top) + 10px) 14px 0;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+}
+header .title { font-weight: 650; font-size: 16px; letter-spacing: 0.2px; }
+header .sub { color: var(--muted); font-size: 12px; margin-top: 1px; }
+.icon-btn {
+  pointer-events: auto; flex: none; width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 17px; font-weight: 600;
+  display: grid; place-items: center; cursor: pointer;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+
+#info {
+  position: absolute; z-index: 4; left: 12px; right: 60px; top: calc(env(safe-area-inset-top) + 62px); margin: 0; max-width: 460px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 12px; box-shadow: 0 6px 24px rgba(23, 33, 43, 0.12);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  display: flex; align-items: center; gap: 10px;
+}
+#info .dot { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.18); }
+#info .txt { flex: 1 1 auto; min-width: 0; }
+#info .name { font-weight: 600; font-size: 14px; }
+#info .layer { color: var(--muted); font-size: 12px; }
+#info button { flex: none; }
+#hint {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 10px; text-align: center; pointer-events: none;
+  color: var(--muted); font-size: 12px; transition: opacity 0.6s;
+}
+[hidden] { display: none !important; }
+
+#panel {
+  flex: none; z-index: 5; background: #fff; border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -6px 24px rgba(23, 33, 43, 0.06);
+}
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tabs button {
+  flex: 1 1 0; border: 0; background: none; padding: 11px 0 9px; font: inherit; font-size: 14px; color: var(--muted);
+  border-bottom: 2px solid transparent; cursor: pointer;
+}
+.tabs button[aria-selected="true"] { color: var(--accent-ink); border-bottom-color: var(--accent); font-weight: 600; }
+.pane { padding: 10px 14px 12px; height: 156px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.pane p { margin: 0 0 8px; color: var(--muted); font-size: 12.5px; }
+.pane p b { color: var(--ink); font-weight: 600; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.row.scroll { flex-wrap: nowrap; overflow-x: auto; margin: 0 -14px 8px; padding: 0 14px; scrollbar-width: none; }
+.row.scroll::-webkit-scrollbar { display: none; }
+.label { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+
+button.chip, button.btn {
+  font: inherit; font-size: 13.5px; white-space: nowrap; cursor: pointer;
+  border: 1px solid var(--line); background: var(--chip); color: var(--ink);
+  border-radius: 999px; padding: 7px 13px; min-height: 36px;
+}
+button.chip[aria-pressed="true"] { background: #17212b; border-color: #17212b; color: #fff; }
+button.chip[aria-pressed="false"] { background: #fff; color: #8a96a3; text-decoration: line-through; }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.btn[aria-pressed="true"] { background: #17212b; border-color: #17212b; color: #fff; }
+button.btn.sel { background: #17212b; border-color: #17212b; color: #fff; }
+button:disabled { opacity: 0.45; cursor: default; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.slider { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.slider span { flex: none; font-size: 12px; color: var(--muted); min-width: 2.6em; }
+.slider span:last-child { text-align: right; }
+input[type="range"] { flex: 1 1 auto; height: 34px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; }
+input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: #d5dbe2; }
+input[type="range"]::-moz-range-track { height: 6px; border-radius: 3px; background: #d5dbe2; }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--accent); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); }
+input[type="range"]:disabled::-webkit-slider-thumb { border-color: #9aa5b1; }
+.readout { font-size: 13px; font-variant-numeric: tabular-nums; margin: 0 0 8px; color: var(--ink); }
+.readout em { font-style: normal; color: var(--accent-ink); font-weight: 600; }
+
+#help {
+  position: absolute; inset: 0; z-index: 20; background: rgba(23, 33, 43, 0.45); display: grid; place-items: center; padding: 18px;
+}
+#help .sheet {
+  background: #fff; border-radius: 18px; max-width: 440px; width: 100%; max-height: 86%; overflow: auto; padding: 18px 18px 14px;
+  -webkit-user-select: text; user-select: text;
+}
+#help h2 { margin: 0 0 8px; font-size: 17px; }
+#help h3 { margin: 14px 0 4px; font-size: 14px; }
+#help ul { margin: 0; padding-left: 1.2em; color: #33404d; font-size: 13.5px; }
+#help li { margin: 3px 0; }
+#help .foot { display: flex; justify-content: flex-end; margin-top: 14px; }
+
+#loading {
+  position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: #e9edf1; color: var(--muted); font-size: 14px;
+  text-align: center; padding: 24px;
+}
+
+@media (min-width: 900px) and (min-height: 520px) {
+  #app { flex-direction: row; }
+  #panel {
+    width: 372px; border-top: 0; border-left: 1px solid var(--line); display: flex; flex-direction: column;
+    box-shadow: -6px 0 24px rgba(23, 33, 43, 0.06); overflow-y: auto;
+  }
+  .tabs { display: none; }
+  .pane { display: block !important; height: auto; overflow: visible; border-bottom: 1px solid var(--line); padding: 14px 18px 10px; }
+  .pane::before { content: attr(data-title); display: block; font-weight: 650; font-size: 14px; margin-bottom: 8px; }
+  .row.scroll { flex-wrap: wrap; margin: 0 0 8px; padding: 0; }
+  header { padding-left: 20px; padding-top: 16px; }
+  header .title { font-size: 18px; }
+}
+@media (max-height: 520px) and (max-width: 899px) {
+  .pane { height: 112px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="view" tabindex="0" aria-label="背包 3D 预览，拖动旋转"></canvas>
+    <header>
+      <div>
+        <div class="title">BP40-A1 随动背负 40 L</div>
+        <div class="sub">3D 预览 · 按裁片尺寸装配的示意模型</div>
+      </div>
+      <button class="icon-btn" id="help-open" aria-label="操作说明">?</button>
+    </header>
+    <div id="hint">单指拖动旋转 · 双指缩放和平移 · 点一下部件看名称</div>
+    <div id="info" hidden>
+      <span class="dot"></span>
+      <div class="txt"><div class="name"></div><div class="layer"></div></div>
+      <button class="btn" id="info-hide">隐藏</button>
+      <button class="btn" id="info-close" aria-label="关闭">×</button>
+    </div>
+    <div id="help" hidden>
+      <div class="sheet" role="dialog" aria-labelledby="help-title">
+        <h2 id="help-title">怎么操作</h2>
+        <ul>
+          <li>手机：单指拖动旋转，双指捏合缩放，双指拖动平移。</li>
+          <li>电脑：左键拖动旋转，滚轮缩放，右键拖动平移。</li>
+          <li>点一下某个部件，会显示它的名称和对应的裁片或物料编号，可以单独隐藏它。</li>
+          <li>下面几个页签：<b>视角</b>切换常用视角和看点，<b>图层</b>开关各层，<b>拆解</b>把各层沿前后方向拉开，<b>随动</b>演示联动带在联动座里左右走带和锁止，<b>背长</b>切换肩轭的 5 个档位。</li>
+        </ul>
+        <h3>这个模型是什么</h3>
+        <ul>
+          <li>软质部件的尺寸取自 A1 裁片数据，硬件（联动座、滚轮、锁止扳手、枢转盘）取自 A0 的 CAD 实体。</li>
+          <li>它用来看各部件怎么装在一起、功能怎么动。随动和背长的动作是按带长不变算出来的运动示意，不是布料仿真，也不代表实际受力后的形状。</li>
+          <li>量产尺寸以裁片图和样包实测为准。</li>
+        </ul>
+        <div class="foot"><button class="btn primary" id="help-close">知道了</button></div>
+      </div>
+    </div>
+    <div id="loading">正在加载模型…</div>
+  </div>
+
+  <section id="panel" aria-label="控制面板">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="view" aria-selected="true">视角</button>
+      <button role="tab" data-tab="layers" aria-selected="false">图层</button>
+      <button role="tab" data-tab="explode" aria-selected="false">拆解</button>
+      <button role="tab" data-tab="sway" aria-selected="false">随动</button>
+      <button role="tab" data-tab="torso" aria-selected="false">背长</button>
+    </nav>
+
+    <div class="pane" data-pane="view" data-title="视角">
+      <div class="label">常用视角</div>
+      <div class="row scroll" id="views"></div>
+      <div class="label">看点</div>
+      <div class="row scroll" id="tours"></div>
+      <div class="row">
+        <button class="btn" id="spin" aria-pressed="false">自动旋转</button>
+        <button class="btn" id="reset">全部复位</button>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="layers" data-title="图层" hidden>
+      <p>点一下开或关。包体可以设成半透明，从正面也能看到背负系统。</p>
+      <div class="row" id="layers"></div>
+      <div class="row">
+        <button class="btn" id="xray" aria-pressed="false">包体半透明</button>
+        <button class="btn" id="show-all">全部显示</button>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="explode" data-title="拆解" hidden>
+      <p>把各层沿前后方向拉开：包体在最后，往前依次是后幅附件、背架、联动座、悬浮网和腰垫、联动带、腰带、肩带。</p>
+      <div class="slider"><span>合拢</span><input type="range" id="explode" min="0" max="100" value="0" aria-label="拆解程度"><span>拉开</span></div>
+      <div class="row">
+        <button class="btn" data-explode="0">合拢</button>
+        <button class="btn" data-explode="55">拉开一半</button>
+        <button class="btn" data-explode="100">完全拉开</button>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="sway" data-title="随动" hidden>
+      <p>左右肩带下端由一根联动带经联动座的两个滚轮连在一起。一侧肩膀前摆，这一侧放长，另一侧收短同样的量，限位块限制每侧 <b id="sway-max"></b>。</p>
+      <div class="slider"><span>左肩前</span><input type="range" id="sway" min="-35" max="35" step="1" value="0" aria-label="联动带走带量"><span>右肩前</span></div>
+      <div class="readout" id="sway-read"></div>
+      <div class="row">
+        <button class="btn primary" id="walk" aria-pressed="false">演示走路摆动</button>
+        <button class="btn" id="lock" aria-pressed="false">锁止</button>
+        <button class="btn" id="see-hub">看联动座</button>
+      </div>
+    </div>
+
+    <div class="pane" data-pane="torso" data-title="背长" hidden>
+      <p>肩轭用 G 钩挂在后幅的梯带上，一共 5 档，相邻两档差 <b id="torso-step"></b>。肩带长度不变，高低差由肩带下端的调节带补。</p>
+      <div class="row" id="rungs"></div>
+      <div class="readout" id="torso-read"></div>
+    </div>
+  </section>
+</div>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

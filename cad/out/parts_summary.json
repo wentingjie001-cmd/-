@@ -1,0 +1,164 @@
+[
+ {
+  "part": "pack_body",
+  "volume_mm3": 31173551,
+  "bbox_mm": [
+   285,
+   201,
+   650
+  ]
+ },
+ {
+  "part": "front_pocket",
+  "volume_mm3": 2389243,
+  "bbox_mm": [
+   238,
+   36,
+   360
+  ]
+ },
+ {
+  "part": "compression_bands",
+  "volume_mm3": 14159,
+  "bbox_mm": [
+   208,
+   54,
+   248
+  ]
+ },
+ {
+  "part": "side_pockets",
+  "volume_mm3": 2716546,
+  "bbox_mm": [
+   316,
+   168,
+   250
+  ]
+ },
+ {
+  "part": "y_frame",
+  "volume_mm3": 35522,
+  "bbox_mm": [
+   235,
+   29,
+   473
+  ]
+ },
+ {
+  "part": "mesh_panel",
+  "volume_mm3": 257445,
+  "bbox_mm": [
+   238,
+   13,
+   311
+  ]
+ },
+ {
+  "part": "lumbar_pad",
+  "volume_mm3": 460160,
+  "bbox_mm": [
+   192,
+   22,
+   118
+  ]
+ },
+ {
+  "part": "tension_straps",
+  "volume_mm3": 17945,
+  "bbox_mm": [
+   258,
+   49,
+   404
+  ]
+ },
+ {
+  "part": "hub_housing",
+  "volume_mm3": 98108,
+  "bbox_mm": [
+   156,
+   38,
+   46
+  ]
+ },
+ {
+  "part": "rollers",
+  "volume_mm3": 6874,
+  "bbox_mm": [
+   146,
+   26,
+   14
+  ]
+ },
+ {
+  "part": "cam_lever",
+  "volume_mm3": 9872,
+  "bbox_mm": [
+   30,
+   20,
+   49
+  ]
+ },
+ {
+  "part": "pivot_plate",
+  "volume_mm3": 55067,
+  "bbox_mm": [
+   190,
+   10,
+   64
+  ]
+ },
+ {
+  "part": "webbing",
+  "volume_mm3": 26742,
+  "bbox_mm": [
+   304,
+   227,
+   247
+  ]
+ },
+ {
+  "part": "shoulder_strap_l",
+  "volume_mm3": 750766,
+  "bbox_mm": [
+   144,
+   331,
+   313
+  ]
+ },
+ {
+  "part": "shoulder_strap_r",
+  "volume_mm3": 750890,
+  "bbox_mm": [
+   144,
+   331,
+   313
+  ]
+ },
+ {
+  "part": "sternum_strap",
+  "volume_mm3": 21355,
+  "bbox_mm": [
+   220,
+   10,
+   24
+  ]
+ },
+ {
+  "part": "hip_belt_l",
+  "volume_mm3": 1104282,
+  "bbox_mm": [
+   279,
+   319,
+   110
+  ]
+ },
+ {
+  "part": "hip_belt_r",
+  "volume_mm3": 1059143,
+  "bbox_mm": [
+   235,
+   310,
+   110
+  ]
+ }
+]
