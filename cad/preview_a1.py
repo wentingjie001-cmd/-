@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import math
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import cadquery as cq
@@ -177,8 +178,34 @@ def cq_mesh(wp, tol=0.2):
     return merge(*out)
 
 
-def placed(part, origin, xdir, zdir):
-    return cq_mesh(hw.place(part, tuple(origin), tuple(xdir), tuple(zdir)))
+@lru_cache(maxsize=None)
+def a0_mesh(name, tol=0.2):
+    """Hard part from ``backpack_model.py``, tessellated once."""
+    return cq_mesh(getattr(m, name)(), tol)
+
+
+@lru_cache(maxsize=None)
+def hw_mesh(kind, w, piece=None):
+    """Buckle from the hardware library, tessellated once in its local frame."""
+    part = getattr(hw, kind)(w)
+    return cq_mesh(part[piece] if piece else part)
+
+
+def placed(mesh, origin, xdir, zdir):
+    """Put a local-frame mesh at origin with local X -> xdir and local Z -> zdir (same rule as ``hw.place``)."""
+    z = _unit(zdir)
+    x = np.asarray(xdir, float)
+    x = _unit(x - (x @ z) * z)
+    v, f = mesh
+    return np.asarray(origin, float) + v @ np.array([x, np.cross(z, x), z]), f
+
+
+def subframe(fr, s0, s1, k):
+    """Frames between arc lengths s0 and s1 of an existing sweep, resampled to k stations."""
+    arc = pt.cum(fr[0])
+    u = np.linspace(s0, s1, k)
+    out = [np.column_stack([np.interp(u, arc, a[:, i]) for i in range(3)]) for a in fr[:4]]
+    return out[0], _unit(out[1]), _unit(out[2]), _unit(out[3]), (u - s0) / (s1 - s0)
 
 
 # --------------------------------------------------------------------------- body surface
@@ -235,10 +262,72 @@ def back_pt(x, z, lift=0.0):
     return np.array([x, Y0 - lift, z])
 
 
+# --------------------------------------------------------------------------- harness poses
+
+SWAY_MAX = 35.0  # travel of the linkage web through the hub, each way, set by the stops
+TORSO_STEP, TORSO_RUNGS = 25.0, 5
+STRAP_N, LINK_N = 70, 50
+STOP_ARC = (43.0, 69.0)  # where the stop sits on the web at rest, measured from the hub exit
+STRAP_REST = np.array([(62, Y0 - 4, 570), (64, 40, 600), (72, -30, 619), (92, -110, 624), (110, -190, 562), (124, -222, 462), (138, -201, 357)], float)
+_TORSO_K = np.array([1.0, 1.0, 1.0, 1.0, 0.7, 0.4, 0.4])  # how far each control point follows the yoke
+_SWAY_K = np.array([0.0, 0.0, 0.25, 0.6, 1.0, 1.0, 1.0])  # how far each control point follows the shoulder
+_SWAY_DIR = np.array([0.0, -0.5, 0.866])  # a shoulder that swings forward also rises
+_LINK_MID = np.array([150.0, -52.0, 250.0])
+
+
+def _strap_frames(s, torso, a, t):
+    p = STRAP_REST + np.outer(_TORSO_K, [0.0, 0.0, torso]) + np.outer(_SWAY_K, a * _SWAY_DIR)
+    p[6] = p[5] + (p[6] - p[5]) * t
+    return sweep(p * [s, 1, 1], wdir=(1, 0, 0), away=(0, -100, 450), n=STRAP_N)
+
+
+def _link_points(s, fr, end0):
+    end = fr[0][-1] + fr[1][-1] * 14.0
+    ym = m.P.hub_y0 + m.P.hub_depth / 2
+    mid = (_LINK_MID + 0.5 * (end * [s, 1, 1] - end0)) * [s, 1, 1]
+    return [(s * 74, ym, m.P.hub_z0 + 40), (s * 112, 20, 150), tuple(mid), tuple(end)]
+
+
+@lru_cache(maxsize=None)
+def _rest():
+    fr = _strap_frames(1, 0.0, 0.0, 1.0)
+    end0 = fr[0][-1] + fr[1][-1] * 14.0
+    chest = int(np.argmin(np.abs(fr[0][35:, 2] - 500.0))) + 35
+    return pt.length(fr[0]), end0, chest
+
+
+@lru_cache(maxsize=None)
+def harness_frames(s, sway=0.0, torso=0.0):
+    """Strap and linkage-web frames for one side.
+
+    The strap keeps its pattern length. ``torso`` moves the yoke (and the shoulder with it); the lower
+    adjuster takes up the difference. ``sway`` is the length of web that has run through the hub towards
+    the right-hand strap: that side gets longer by ``sway`` and the other side shorter by the same amount.
+    """
+    from scipy.optimize import brentq
+
+    strap_len, end0, _ = _rest()
+
+    def strap(a):
+        t = brentq(lambda t: pt.length(_strap_frames(s, torso, a, t)[0]) - strap_len, 0.2, 3.0, xtol=1e-4)
+        return _strap_frames(s, torso, a, t)
+
+    def link(fr):
+        return sweep(_link_points(s, fr, end0), axis=(0.0, -100.0), n=LINK_N)
+
+    fr = strap(0.0)
+    if sway:
+        target = pt.length(link(fr)[0]) + s * sway
+        a = brentq(lambda a: pt.length(link(strap(a))[0]) - target, -90.0, 90.0, xtol=1e-3)
+        fr = strap(a)
+    return fr, link(fr)
+
+
 # --------------------------------------------------------------------------- model
 
 
-def build():
+def build(sway=0.0, torso=0.0):
+    """All parts. ``sway`` (mm, ± SWAY_MAX) and ``torso`` (mm, ± 2 rungs) pose the harness; see ``harness_frames``."""
     P, _, info = pt.build()
     parts: list[Part] = []
     meas: dict[str, float] = {}
@@ -285,10 +374,9 @@ def build():
         x600 = shape(600.0)[0] / 2
         strap = [(s * (shape(540.0)[0] / 2 + 1.5), yc, 540.0), (s * (x600 + 1.5), yc, 590.0), (s * 160.0, yc, 609.0)]
         straps.append(band(sweep(strap, wdir=(0, 1, 0)), 20, 1.6))
-        b = hw.side_release_buckle(20)
         zdir = (s * 0.72, 0.0, 0.69)
         for k in ("female", "male"):
-            clips.append(placed(b[k], (s * 165.0, yc, 613.0), (0, 1, 0), zdir))
+            clips.append(placed(hw_mesh("side_release_buckle", 20, k), (s * 165.0, yc, 613.0), (0, 1, 0), zdir))
     add("roll_straps", "卷口侧扣带（W07）", "bag", WEB, *straps)
     add("roll_buckles", "卷口插扣（H01）", "bag", HARD, *clips)
     tags["卷口：卷起后两端扣在侧幅"] = np.array([60.0, yc + 20, 696.0])
@@ -338,7 +426,7 @@ def build():
             comps.append(band(f2, 15, 1.4))
             meas.setdefault("side_comp", pt.length(pts_))
             k = int(len(f2[0]) * (0.8 if lo == SEAM_BR else 0.2))
-            locks.append(placed(hw.ladder_lock(15), f2[0][k] + f2[3][k] * 2.5 * np.sign(f2[3][k] @ (f2[0][k] - [0, yc, z])), (0, 0, 1), f2[1][k]))
+            locks.append(placed(hw_mesh("ladder_lock", 15), f2[0][k] + f2[3][k] * 2.5 * np.sign(f2[3][k] @ (f2[0][k] - [0, yc, z])), (0, 0, 1), f2[1][k]))
     add("side_pockets", "侧袋（B02）", "bag", STRETCH, *pockets)
     add("side_pocket_hems", "侧袋口松紧带", "bag", WEB, *hems)
     add("side_comp", "侧压缩带（W08，每侧两条）", "bag", WEB, *comps)
@@ -355,9 +443,9 @@ def build():
     patches += [plate(pt.rrect(44, 72, 6), back_pt(s * 106.0, 560.0), 14.0) for s in (1, -1)]
     add("patches", "锚点加强片（E02）和背架上角袋（E03）", "back", TPU, *patches)
     yoke = np.array(P["C08"].sew())
-    yoke_z = 500.0 - 30.0  # G-hook on the middle rung
+    yoke_z = 500.0 - 30.0 + torso  # G-hook on the middle rung when torso = 0
     add("yoke", "肩轭（C08，挂在梯带中间一档）", "back", YOKE, plate(yoke, back_pt(0, yoke_z, 2.0), 3.5))
-    add("g_hook", "G 钩（H07）", "back", ALU, plate(pt.rrect(30, 14, 3), back_pt(0, 500.0, 5.5), 2.0))
+    add("g_hook", "G 钩（H07）", "back", ALU, plate(pt.rrect(30, 14, 3), back_pt(0, 500.0 + torso, 5.5), 2.0))
     add("handle", "提手（W12）", "back", WEB, tube([(-35, Y0 - 1, 634), (-24, Y0 - 16, 664), (0, Y0 - 20, 672), (24, Y0 - 16, 664), (35, Y0 - 1, 634)], 4.0))
     tags["背长调节：肩轭 + 梯带 + G 钩，5 档"] = back_pt(0, 562.0, 6.0)
 
@@ -392,12 +480,12 @@ def build():
         upper.append(band(sweep([a, (a + b) / 2 + [s * 3, -3, 0], b], wdir=(1, 0, 0)), 20, 1.5))
         cams.append(plate(pt.rrect(28, 20, 3), back_pt(s * 112.0, 255.0, 1.0), 7.0))
         meas.setdefault("upper_tension", float(np.linalg.norm(b - a)))
-    add("lumbar", "下区腰垫（C04–C07，左右分体）", "back", SPACER, cq_mesh(m.lumbar_pad()))
+    add("lumbar", "下区腰垫（C04–C07，左右分体）", "back", SPACER, a0_mesh("lumbar_pad"))
     lower = []
     for s in (1, -1):
         a, b = np.array([s * 96.0, 13.0, 182.0]), back_pt(s * 118.0, 180.0, 2.0)
         lower.append(band(sweep([a, (a + b) / 2 + [s * 6, 0, 0], b], wdir=(0, 0, 1)), 20, 1.5))
-        cams.append(placed(hw.ladder_lock(20), (a + b) / 2 + [s * 8, 0, 0], (0, 0, 1), b - a))
+        cams.append(placed(hw_mesh("ladder_lock", 20), (a + b) / 2 + [s * 8, 0, 0], (0, 0, 1), b - a))
         meas.setdefault("lower_tension", float(np.linalg.norm(b - a)))
     add("tension", "上区、下区张紧带（W09、W10）", "back", ORANGE, *upper, *lower)
     add("tension_hw", "凸轮扣、梯扣（H05、H03）", "back", HARD, *cams)
@@ -406,39 +494,34 @@ def build():
     tags["联动座加强片（内侧有内衬板）"] = back_pt(-82.0, pt.HUB_Z - 30.0, 1.5)
 
     # ---- linkage hub, rollers, lock, pivot --------------------------------
-    add("hub", "联动座（H13）", "back", (0.38, 0.39, 0.42), cq_mesh(m.hub_housing(), 0.1))
-    add("rollers", "滚轮", "back", ROLLER, cq_mesh(m.rollers(), 0.1))
-    add("cam_lever", "锁止扳手", "back", ORANGE, cq_mesh(m.cam_lever(), 0.1))
-    add("pivot", "腰带枢转盘", "pivot", HARD, cq_mesh(m.pivot_plate(), 0.1))
+    add("hub", "联动座（H13）", "back", (0.38, 0.39, 0.42), a0_mesh("hub_housing", 0.1))
+    add("rollers", "滚轮", "back", ROLLER, a0_mesh("rollers", 0.1))
+    add("cam_lever", "锁止扳手", "back", ORANGE, a0_mesh("cam_lever", 0.1))
+    add("pivot", "腰带枢转盘", "pivot", HARD, a0_mesh("pivot_plate", 0.1))
     tags["联动座：滚轮 + 锁止扳手"] = np.array([40.0, m.P.hub_y0, m.P.hub_z0 + 22.0])
 
     # ---- shoulder straps ---------------------------------------------------
-    ins = yoke_z + 100.0
     strap_w = lambda u: np.interp(u, [0, 0.25, 0.6, 1.0], [60, 70, 66, 50])  # noqa: E731
-    inner, outer, link, hwp, lifters, stops = [], [], [], [], [], []
+    inner, outer, link, hwp, lifters, stops, chest = [], [], [], [], [], [], {}
+    jc = _rest()[2]
     for s in (1, -1):
-        path = [(s * 62, Y0 - 4, ins), (s * 64, 40, ins + 30), (s * 72, -30, 619), (s * 92, -110, 624), (s * 110, -190, 562), (s * 124, -222, 462), (s * 138, -201, 357)]
-        fr = sweep(path, wdir=(1, 0, 0), away=(0, -100, 450), n=70)
+        fr, fw = harness_frames(s, float(sway), float(torso))
         meas.setdefault("strap", pt.length(fr[0]))
         inner.append(band(fr, strap_w, 7.0, off=-3.0))
         outer.append(band(fr, lambda u: strap_w(u) - 3, 5.0, off=3.0))
         tip, tdir = fr[0][-1], fr[1][-1]
-        hwp.append(placed(hw.ladder_lock(20), tip + tdir * 8.0, fr[2][-1], tdir))
-        ym = m.P.hub_y0 + m.P.hub_depth / 2
-        web = [(s * 74, ym, m.P.hub_z0 + 40), (s * 112, 20, 150), (s * 150, -52, 250), tuple(tip + tdir * 14.0)]
-        fw = sweep(web, axis=(0.0, -100.0), n=50)
+        hwp.append(placed(hw_mesh("ladder_lock", 20), tip + tdir * 8.0, fr[2][-1], tdir))
         meas.setdefault("link_half", pt.length(fw[0]))
         link.append(band(fw, 20, 1.6))
-        stops.append(band(fw, 26, 9, i0=5, i1=8, e=0.6))
+        stops.append(band(subframe(fw, STOP_ARC[0] + s * sway, STOP_ARC[1] + s * sway, 4), 26, 9, e=0.6))
         top = fr[0][16] + fr[3][16] * 6.0
         anchor = back_pt(s * 105.0, 585.0, 1.5)
         fl = sweep([top, (top + anchor) / 2 + [0, 0, 10], anchor], wdir=(1, 0, 0), n=16)
         meas.setdefault("lifter", pt.length(fl[0]))
         lifters.append(band(fl, 15, 1.5))
-        hwp.append(placed(hw.ladder_lock(15), fl[0][4] + fl[3][4] * 2.0, fl[2][4], -fl[1][4]))
+        hwp.append(placed(hw_mesh("ladder_lock", 15), fl[0][4] + fl[3][4] * 2.0, fl[2][4], -fl[1][4]))
+        chest[s] = fr[0][jc] + fr[3][jc] * 7.0
         if s == 1:
-            j = int(np.argmin(np.abs(fr[0][35:, 2] - 500.0))) + 35
-            chest = fr[0][j] + fr[3][j] * 7.0
             j = int(np.argmax(fr[0][:, 2])) + 3
             tags["肩带（S 形，泡棉 + 间隔网布）"] = fr[0][j] + fr[3][j] * 5.5
             tags["肩带内层（间隔网布）"] = fr[0][52] - fr[3][52] * 6.5
@@ -447,11 +530,12 @@ def build():
     add("load_lifters", "上拉带（W03）", "harness", WEB, *lifters)
     add("linkage_web", "联动带 + 肩带下调节带（W01、W02）", "linkage", ORANGE, *link)
     add("stops", "限位块", "linkage", HARD, *stops)
-    cx, cy, cz = chest
-    fs = sweep([(-cx + 22, cy - 2, cz), (0, cy - 10, cz), (cx - 22, cy - 2, cz)], wdir=(0, 0, 1))
+    cl, cr = chest[-1], chest[1]
+    cm = (cl + cr) / 2
+    fs = sweep([cl + [22, -2, 0], cm + [0, -10, 0], cr + [-22, -2, 0]], wdir=(0, 0, 1), n=25)
     add("sternum", "胸带（W04）", "harness", WEB, band(fs, 15, 1.4))
-    b = hw.side_release_buckle(15)
-    hwp += [placed(b[k], (0, cy - 13, cz), (0, 0, 1), (1, 0, 0)) for k in ("female", "male")]
+    hwp += [placed(hw_mesh("side_release_buckle", 15, k), cm + [0, -13, 0], (0, 0, 1), cr - cl) for k in ("female", "male")]
+    add("strap_hw", "肩带梯扣、上拉带梯扣、胸带扣", "harness", HARD, *hwp)
     tags["联动带：左右肩带下端经联动座相连"] = np.array([150.0, -60.0, 252.0])
     tags["上拉带"] = np.array([92.0, 10.0, 612.0])
 
@@ -481,9 +565,7 @@ def build():
     add("belt_pockets", "腰带袋（B03–B05）", "harness", BODY, *pk)
     add("belt_zips", "腰带袋拉链（H09）", "harness", HARD, *zipl)
     add("belt_web", "腰带收紧带（W05）", "harness", WEB, *bw)
-    b = hw.side_release_buckle(25)
-    hwp += [placed(b[k], (0, -236, zb + 21), (0, 0, 1), (1, 0, 0)) for k in ("female", "male")]
-    add("harness_hw", "梯扣、胸带扣、腰带中扣", "harness", HARD, *hwp)
+    add("belt_buckle", "腰带中扣（H02）", "harness", HARD, *[placed(hw_mesh("side_release_buckle", 25, k), (0, -236, zb + 21), (0, 0, 1), (1, 0, 0)) for k in ("female", "male")])
     tags["腰带中段：经枢转盘接联动座"] = np.array([-45.0, 4.5, zb + 30.0])
 
     meas["volume_flat_back"] = float(np.trapezoid([shape_area(z) for z in np.linspace(0, pt.Z_TOP, 641)], np.linspace(0, pt.Z_TOP, 641))) / 1e6
