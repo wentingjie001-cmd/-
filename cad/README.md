@@ -21,6 +21,8 @@ python3 build_benchmark.py --photos <官网照片目录>  # 对标款 Aarn PM40 
 python3 build_aarn_detail.py                      # 对标款细节模型（含内部结构、五金件、剖切、爆炸图、BOM）
 python3 build_patterns.py                         # A1 生产用裁片：DXF、1:1 PDF、排料图、清单（约 10 秒；校验不过会报错退出）
 python3 preview_a1.py                             # A1 3D 预览：按裁片装配的渲染图、标注图、转台动画、GLB（约 40 秒）
+python3 build_viewer.py                           # 交互网页的模型数据，写出 ../viewer/model.js（约 6 秒）
+cd ../viewer-src && npm install && npm run build  # 打包 three.js，写出 ../viewer/app.js
 ```
 
 ## 文件
@@ -38,7 +40,8 @@ python3 preview_a1.py                             # A1 3D 预览：按裁片装�
 | `build_aarn_detail.py` | 生成细节模型的总装 STEP、渲染、剖切图、爆炸图、五金图集和 BOM，输出到 `out/benchmark_aarn_pm40/detail/`（约 8 分钟） |
 | `patterns.py` | A1 生产用裁片定义：装满后的截面、32 种裁片（净线、每条边的缝份和做法、刀口、纱向、定位点）、织带和五金清单、缝边对位校验。与 3D 模型相互独立，见 docs/08 |
 | `build_patterns.py` | 生成裁片 DXF、1:1 PDF、排料图、裁片清单、缝边校验表、尺寸表、用料和重量估算，输出到 `out/production/` |
-| `preview_a1.py` | A1 3D 预览：读 `patterns.py` 的截面、口袋位置、肩带和腰带外形、锚点，装配成网格模型并渲染；同时输出 3D 路径长度与裁片、织带下料长度的对照表 |
+| `preview_a1.py` | A1 3D 预览：读 `patterns.py` 的截面、口袋位置、肩带和腰带外形、锚点，装配成网格模型并渲染；同时输出 3D 路径长度与裁片、织带下料长度的对照表。`build(sway, torso)` 可以按带长不变摆出联动和背长的姿态 |
+| `build_viewer.py` | 把预览模型按静止、左右走带极限、背长最高和最低五种姿态导出成 `../viewer/model.js`，供交互网页使用 |
 
 ## 输出（`cad/out/`）
 
@@ -57,6 +60,7 @@ python3 preview_a1.py                             # A1 3D 预览：按裁片装�
 | `drawings/` | BP40-HUB-001 联动座 A3 工程图（PDF/PNG/SVG/DXF）、BP40-FRM-001 Y 型背架 A3 工程图 | 打样、开模询价 |
 | `production/` | A1 裁片：`dxf/pieces/` 每片一个 DXF，`dxf/BP40-A1_marker_*.dxf` 排料图，`pdf/` 1:1 纸格，另有裁片清单、缝边校验、织带和五金清单、尺寸表、用料和重量估算 | 交给版师打首版样包。还没有经过打样验证 |
 | `preview_a1/` | A1 预览：`a1_iso_front/rear.png`、`a1_three_views.png`、带标注的 `a1_callouts_*.png`、`a1_turntable.gif`、`BP40-A1_preview.glb`、`consistency.md` | 看整包的样子，检查裁片装配关系。不是布料仿真，也不是生产模型 |
+| `../viewer/` | 交互网页：`index.html`、`app.js`、`model.js`。可旋转、点选、开关图层、拆解，并演示联动带走带、背长 5 档和锁止 | 手机或电脑上操作 3D 预览。不依赖网络；源码在 `viewer-src/`，用 esbuild 打包 |
 
 ## 建模假设
 

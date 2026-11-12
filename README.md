@@ -16,7 +16,7 @@
 | [docs/05 对标款逆向重建](docs/05_reverse_engineering_pm40.md) | Aarn PM40 近似 3D 模型（照片标定，非原厂文件）、细节模型（63 种零件，含内部结构、五金件、剖切图、爆炸图、BOM）、测量表、精度与使用边界 |
 | [docs/06 品牌背负结构调研](docs/06_brand_suspension_survey.md) | Mystery Ranch、Osprey、Deuter、Gregory、凯乐石的背负系统，随动背负的同类产品，相关专利及法律状态，可借鉴的通用做法 |
 | [docs/07 公开 CAD 与纸样资源](docs/07_public_cad_and_patterns.md) | 结论：没有任何品牌公开生产用 CAD 或纸样；可合法使用的五金规格、开源纸样、中国和国际标准、工厂接受的文件格式 |
-| [docs/08 A1 量产资料包](docs/08_production_package_A1.md) | 我们自己的 32 种裁片（DXF、1:1 PDF、排料图）、物料和五金清单、缝制工序、尺寸表、检验要求。首版样包用，还没有经过打样验证。第 12 节是按裁片装配的 3D 预览 |
+| [docs/08 A1 量产资料包](docs/08_production_package_A1.md) | 我们自己的 32 种裁片（DXF、1:1 PDF、排料图）、物料和五金清单、缝制工序、尺寸表、检验要求。首版样包用，还没有经过打样验证。第 12 节是按裁片装配的 3D 预览，另有可在手机上操作的交互网页（[viewer/](viewer/index.html)） |
 | [patent/A 发明/实用新型](patent/A_invention_linkage_harness/) | 权利要求书（16 项）、说明书、摘要初稿 |
 | [patent/C、D、E 外观设计](patent/) | 整包、局部（背负系统）、联动座的简要说明 |
 | [cad/](cad/README.md) | 参数化 3D 模型、STEP/STL、专利附图、外观视图、A3 工程图（含 DXF）、生产用裁片（`cad/out/production/`） |
