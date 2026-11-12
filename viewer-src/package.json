@@ -1,0 +1,13 @@
+{
+  "name": "bp40-a1-viewer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Source of the interactive 3D viewer; the bundle is written to ../viewer/app.js",
+  "scripts": {
+    "build": "esbuild main.js --bundle --minify --format=iife --target=es2019 --legal-comments=none --banner:js=\"/* BP40-A1 viewer. Bundles three.js (MIT License, Copyright 2010-2024 three.js authors). */\" --outfile=../viewer/app.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "three": "0.170.0"
+  }
+}
